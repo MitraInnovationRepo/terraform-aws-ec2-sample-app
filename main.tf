@@ -111,7 +111,7 @@ resource "aws_iam_instance_profile" "this" {
 }
 
 # EC2 instance
-resource "aws_instance" "web" {
+resource "aws_instance" "this" {
   ami = data.aws_ami.amazon_linux_2.id
   instance_type = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.this.name
@@ -129,43 +129,38 @@ resource "aws_instance" "web" {
   }
 }
 
-//module "mitrai_setf_codepipeline" {
-//  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git?ref=tags/v0.2.1-lw"
-//  name = "sample-spring-app"
-//  namespace = "mitra"
-//  stage = "staging"
-//  tags = {
-//    "BusinessUnit" = "DIGITAL"
-//    "Team" = "SETF"
-//  }
-//  attributes = [
-//    "SETF"
-//  ]
-//
-//  github_organization = "renuka-fernando"
-//  //github_repository = "terraform-aws-codepipeline-sample-spring-app"
-//  github_repository = "sample-spring-app"
-//  github_repository_branch = "master"
-//  github_token = "2355e4918e840f270d170357fdbb4f6e347e94ca"
-//  github_webhook_events = [
-//    "pull_request"
-//  ]
-//  webhook_filter_json_path = "$.action"
-//  webhook_filter_match_equals = "synchronize"
-//
-//
-//  codebuild_description = "SETF CodeBuild Sample Java Application"
-//  codebuild_buildspec = file("${path.module}/resources/buildspec.yml")
-//  codebuild_build_environment_compute_type = "BUILD_GENERAL1_SMALL"
-//  codebuild_build_environment_image = "aws/codebuild/standard:1.0"
-//  codebuild_build_timeout = "5"
-//
-//  codedeploy_deployment_config_name = "CodeDeployDefault.OneAtATime"
-//  codedeploy_ec2_tag_filters = [
-//    {
-//      key = "EC2-Java"
-//      value = ""
-//      type = "KEY_ONLY"
-//    }
-//  ]
-//}
+module "mitrai_setf_codepipeline" {
+  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git?ref=tags/v0.2.1-lw"
+  name = var.name
+  namespace = var.namespace
+  stage = var.stage
+  tags = var.tags
+  attributes = var.attributes
+
+  github_organization = "renuka-fernando"
+  //github_repository = "terraform-aws-codepipeline-sample-spring-app"
+  github_repository = "sample-spring-app"
+  github_repository_branch = "master"
+  github_token = "2355e4918e840f270d170357fdbb4f6e347e94ca"
+  github_webhook_events = [
+    "pull_request"
+  ]
+  webhook_filter_json_path = "$.action"
+  webhook_filter_match_equals = "synchronize"
+
+
+  codebuild_description = "SETF CodeBuild Sample Java Application"
+  codebuild_buildspec = file("${path.module}/resources/buildspec.yml")
+  codebuild_build_environment_compute_type = "BUILD_GENERAL1_SMALL"
+  codebuild_build_environment_image = "aws/codebuild/standard:1.0"
+  codebuild_build_timeout = "5"
+
+  codedeploy_deployment_config_name = "CodeDeployDefault.OneAtATime"
+  codedeploy_ec2_tag_filters = [
+    {
+      key = "Application"
+      value = "SETF-Java-Sample"
+      type = "KEY_VALUE"
+    }
+  ]
+}
