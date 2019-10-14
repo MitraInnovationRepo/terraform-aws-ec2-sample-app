@@ -4,10 +4,20 @@ provider "aws" {
   version = "~> 2.25"
 }
 
+module "label" {
+  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git//modules/aws-label?ref=tags/v0.2.1-lw"
+  namespace = var.namespace
+  name = var.name
+  stage = var.stage
+  tags = var.tags
+  attributes = var.attributes
+  delimiter = var.delimiter
+}
+
 # IAM Role with policy AmazonEC2RoleforAWSCodeDeploy
 # IAM Role for the CodePipeline
 resource "aws_iam_role" "this" {
-  name = "setf_role_test"
+  name = "${module.label.id}${var.delimiter}role"
 
   assume_role_policy = jsonencode({
     "Version": "2012-10-17",
@@ -30,7 +40,7 @@ resource "aws_iam_role_policy_attachment" "this" {
 
 # Security Group
 resource "aws_security_group" "this" {
-  name = "setf-security-group-test"
+  name = "${module.label.id}${var.delimiter}sg"
   description = "Allow TLS inbound traffic"
   vpc_id = "vpc-b919a3d0"
 
@@ -96,7 +106,7 @@ data "aws_ami" "amazon_linux_2" {
 }
 
 resource "aws_iam_instance_profile" "this" {
-  name = "SETF_insatmce_profile_test"
+  name = "${module.label.id}${var.delimiter}instance${var.delimiter}profile"
   role = aws_iam_role.this.name
 }
 
