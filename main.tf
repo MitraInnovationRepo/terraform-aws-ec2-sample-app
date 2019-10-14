@@ -95,10 +95,16 @@ data "aws_ami" "amazon_linux_2" {
   ]
 }
 
+resource "aws_iam_instance_profile" "this" {
+  name = "SETF_insatmce_profile_test"
+  role = aws_iam_role.this.name
+}
+
 # EC2 instance
 resource "aws_instance" "web" {
   ami = data.aws_ami.amazon_linux_2.id
   instance_type = "t2.micro"
+  iam_instance_profile = aws_iam_instance_profile.this.name
 
   # install CodeDeploy agent and Java 8
   user_data = file("${path.module}/resources/user_data.sh")
