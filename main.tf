@@ -17,7 +17,7 @@ module "label" {
 # IAM Role with policy AmazonEC2RoleforAWSCodeDeploy
 # IAM Role for the CodePipeline
 resource "aws_iam_role" "this" {
-  name = "${module.label.id}${var.delimiter}role"
+  name = "${module.label.id}${var.delimiter}ec2"
 
   assume_role_policy = jsonencode({
     "Version": "2012-10-17",
@@ -25,7 +25,7 @@ resource "aws_iam_role" "this" {
       {
         Effect: "Allow",
         Principal: {
-          "Service": "codepipeline.amazonaws.com"
+          "Service": "ec2.amazonaws.com"
         },
         Action: "sts:AssumeRole"
       }
@@ -34,7 +34,12 @@ resource "aws_iam_role" "this" {
 }
 
 resource "aws_iam_role_policy_attachment" "this" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+  role = aws_iam_role.this.name
+}
+
+resource "aws_iam_instance_profile" "this" {
+  name = "${module.label.id}${var.delimiter}ec2${var.delimiter}instance${var.delimiter}profile"
   role = aws_iam_role.this.name
 }
 
@@ -105,11 +110,6 @@ data "aws_ami" "amazon_linux_2" {
   ]
 }
 
-resource "aws_iam_instance_profile" "this" {
-  name = "${module.label.id}${var.delimiter}instance${var.delimiter}profile"
-  role = aws_iam_role.this.name
-}
-
 # EC2 instance
 resource "aws_instance" "this" {
   ami = data.aws_ami.amazon_linux_2.id
@@ -123,6 +123,7 @@ resource "aws_instance" "this" {
   vpc_security_group_ids = [
     aws_security_group.this.id
   ]
+  associate_public_ip_address = "true"
 
   tags = {
     Application = "SETF-Java-Sample"
@@ -130,7 +131,7 @@ resource "aws_instance" "this" {
 }
 
 module "mitrai_setf_codepipeline" {
-  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git?ref=tags/v0.2.1-lw"
+  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git?ref=tags/v0.2.2-lw"
   name = var.name
   namespace = var.namespace
   stage = var.stage
@@ -145,9 +146,17 @@ module "mitrai_setf_codepipeline" {
   github_webhook_events = [
     "pull_request"
   ]
-  webhook_filter_json_path = "$.action"
-  webhook_filter_match_equals = "synchronize"
 
+  webhook_filters = [
+    {
+      json_path = "$.action"
+      match_equals= "synchronize"
+    },
+    {
+      json_path = "$.base.ref"
+      match_equals= "master"
+    }
+  ]
 
   codebuild_description = "SETF CodeBuild Sample Java Application"
   codebuild_buildspec = file("${path.module}/resources/buildspec.yml")
@@ -160,7 +169,7 @@ module "mitrai_setf_codepipeline" {
     {
       key = "Application"
       value = "SETF-Java-Sample"
-      type = "KEY_VALUE"
+      type = "KEY_AND_VALUE"
     }
   ]
 }
