@@ -34,3 +34,15 @@ variable "delimiter" {
   default = "-"
   description = "Delimiter to be used between `name`, `namespace`, `stage`, etc."
 }
+
+variable "aws_region" {
+  type = "string"
+  default = ""
+  description = "AWS region"
+}
+
+variable "aws_profile" {
+  type = "string"
+  default = ""
+  description = "AWS profile"
+}

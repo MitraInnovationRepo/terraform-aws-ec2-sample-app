@@ -1,7 +1,18 @@
 provider "aws" {
-  profile = "default"
-  region = "us-east-2"
+  profile = var.aws_profile
+  region = var.aws_region
   version = "~> 2.25"
+}
+
+locals {
+  codepipeline_codedeploy_ec2_tag_filters = [
+    for tag_key in keys(var.tags):
+      {
+        key = tag_key
+        value = lookup(var.tags, tag_key)
+        type = "KEY_AND_VALUE"
+      }
+  ]
 }
 
 module "label" {
@@ -125,9 +136,7 @@ resource "aws_instance" "this" {
   ]
   associate_public_ip_address = "true"
 
-  tags = {
-    Application = "SETF-Java-Sample"
-  }
+  tags = var.tags
 }
 
 module "mitrai_setf_codepipeline" {
@@ -138,23 +147,18 @@ module "mitrai_setf_codepipeline" {
   tags = var.tags
   attributes = var.attributes
 
-  github_organization = "renuka-fernando"
-  //github_repository = "terraform-aws-codepipeline-sample-spring-app"
-  github_repository = "sample-spring-app"
-  github_repository_branch = "master"
+  github_organization = "MitraInnovationRepo"
+  github_repository = "hello-spring-boot"
+  github_repository_branch = "dev"
   github_token = "2355e4918e840f270d170357fdbb4f6e347e94ca"
   github_webhook_events = [
-    "pull_request"
+    "push"
   ]
 
   webhook_filters = [
     {
-      json_path = "$.action"
-      match_equals= "synchronize"
-    },
-    {
-      json_path = "$.base.ref"
-      match_equals= "master"
+      json_path = "$.ref"
+      match_equals = "refs/heads/{Branch}"
     }
   ]
 
@@ -163,13 +167,7 @@ module "mitrai_setf_codepipeline" {
   codebuild_build_environment_compute_type = "BUILD_GENERAL1_SMALL"
   codebuild_build_environment_image = "aws/codebuild/standard:1.0"
   codebuild_build_timeout = "5"
-
   codedeploy_deployment_config_name = "CodeDeployDefault.OneAtATime"
-  codedeploy_ec2_tag_filters = [
-    {
-      key = "Application"
-      value = "SETF-Java-Sample"
-      type = "KEY_AND_VALUE"
-    }
-  ]
+
+  codedeploy_ec2_tag_filters = local.codepipeline_codedeploy_ec2_tag_filters
 }
