@@ -4,17 +4,6 @@ provider "aws" {
   version = "~> 2.25"
 }
 
-locals {
-  codepipeline_codedeploy_ec2_tag_filters = [
-  for tag_key in keys(var.tags):
-  {
-    key = tag_key
-    value = lookup(var.tags, tag_key)
-    type = lookup(var.tags, tag_key) != "" ? (tag_key != "" ? "KEY_AND_VALUE" : "VALUE_ONLY") : "KEY_ONLY"
-  }
-  ]
-}
-
 module "label" {
   source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git//modules/aws-label?ref=tags/v0.2.1-lw"
   namespace = var.namespace
@@ -25,10 +14,57 @@ module "label" {
   delimiter = var.delimiter
 }
 
+# VPC
+resource "aws_vpc" "this" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = "true"
+  enable_dns_hostnames = "true"
+  instance_tenancy = var.vpc_instance_tenancy
+  tags = var.tags
+}
+
+//resource "aws_subnet" "public" {
+//  for_each = var.subnet_numbers
+//
+//  vpc_id            = aws_vpc.this.id
+//  availability_zone = each.key
+//  cidr_block        = cidrsubnet(aws_vpc.this.cidr_block, 8, each.value)
+//  map_public_ip_on_launch = "true"
+//}
+
+resource "aws_subnet" "public" {
+  cidr_block = "10.0.1.0/24"
+  vpc_id = aws_vpc.this.id
+  availability_zone = "us-east-2a"
+}
+
+resource "aws_internet_gateway" "this" {
+  vpc_id = aws_vpc.this.id
+  tags = var.tags
+}
+
+resource "aws_route_table" "this" {
+  vpc_id = aws_vpc.this.id
+  tags = var.tags
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.this.id
+  }
+}
+
+resource "aws_route_table_association" "this" {
+  route_table_id = aws_route_table.this.id
+  subnet_id = aws_subnet.public.id
+}
+
+
 # Security Group
 resource "aws_security_group" "this" {
   name = "${module.label.id}${var.delimiter}sg"
   description = "Allow TLS inbound traffic"
+
+  vpc_id = aws_vpc.this.id
 }
 
 resource "aws_security_group_rule" "ssh" {
@@ -63,6 +99,10 @@ resource "aws_security_group_rule" "allow_out_all" {
     "0.0.0.0/0"
   ]
 }
+
+
+
+
 
 # IAM Role with policy AmazonEC2RoleforAWSCodeDeploy
 # IAM Role for the CodePipeline
@@ -125,46 +165,14 @@ resource "aws_instance" "this" {
   iam_instance_profile = aws_iam_instance_profile.this.name
 
   # install CodeDeploy agent and Java 8
-  user_data = file("${path.module}/resources/user_data.sh")
+  user_data = file("../../resources/user_data.sh")
 
   key_name = "ec2-java"
   vpc_security_group_ids = [
     aws_security_group.this.id
   ]
+  subnet_id = aws_subnet.public.id
   associate_public_ip_address = "true"
 
   tags = var.tags
-}
-
-module "mitrai_setf_codepipeline" {
-  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git?ref=tags/v0.2.2-lw"
-  name = var.name
-  namespace = var.namespace
-  stage = var.stage
-  tags = var.tags
-  attributes = var.attributes
-
-  github_organization = "MitraInnovationRepo"
-  github_repository = "hello-spring-boot"
-  github_repository_branch = "dev"
-  github_token = "2355e4918e840f270d170357fdbb4f6e347e94ca"
-  github_webhook_events = [
-    "push"
-  ]
-
-  webhook_filters = [
-    {
-      json_path = "$.ref"
-      match_equals = "refs/heads/{Branch}"
-    }
-  ]
-
-  codebuild_description = "SETF CodeBuild Sample Java Application"
-  codebuild_buildspec = file("${path.module}/resources/buildspec.yml")
-  codebuild_build_environment_compute_type = "BUILD_GENERAL1_SMALL"
-  codebuild_build_environment_image = "aws/codebuild/standard:1.0"
-  codebuild_build_timeout = "5"
-  codedeploy_deployment_config_name = "CodeDeployDefault.OneAtATime"
-
-  codedeploy_ec2_tag_filters = local.codepipeline_codedeploy_ec2_tag_filters
 }

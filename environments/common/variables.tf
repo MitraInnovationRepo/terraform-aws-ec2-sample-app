@@ -56,7 +56,7 @@ variable "vpc_cidr_block" {
 
 variable "vpc_instance_tenancy" {
   type = "string"
-  default = ""
+  default = "default"
   description = "A tenancy option for instances launched into the VPC"
 }
 
