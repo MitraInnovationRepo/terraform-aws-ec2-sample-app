@@ -47,9 +47,24 @@ variable "aws_profile" {
   description = "AWS profile"
 }
 
-# security group
-variable "security_group_description" {
+# VPC
+variable "vpc_cidr_block" {
   type = "string"
   default = ""
-  description = "The security group description. Defaults to \"Managed by Terraform\". Cannot be \"\""
+  description = "The CIDR block for the VPC"
+}
+
+variable "vpc_instance_tenancy" {
+  type = "string"
+  default = ""
+  description = "A tenancy option for instances launched into the VPC"
+}
+
+variable "subnet_numbers" {
+  description = "Map from availability zone to the number that should be used for each availability zone's subnet"
+  default     = {
+    "eu-west-1a" = 1
+    "eu-west-1b" = 2
+    "eu-west-1c" = 3
+  }
 }

@@ -6,12 +6,12 @@ provider "aws" {
 
 locals {
   codepipeline_codedeploy_ec2_tag_filters = [
-    for tag_key in keys(var.tags):
-      {
-        key = tag_key
-        value = lookup(var.tags, tag_key)
-        type = "KEY_AND_VALUE"
-      }
+  for tag_key in keys(var.tags):
+  {
+    key = tag_key
+    value = lookup(var.tags, tag_key)
+    type = lookup(var.tags, tag_key) != "" ? (tag_key != "" ? "KEY_AND_VALUE" : "VALUE_ONLY") : "KEY_ONLY"
+  }
   ]
 }
 
@@ -23,6 +23,45 @@ module "label" {
   tags = var.tags
   attributes = var.attributes
   delimiter = var.delimiter
+}
+
+# Security Group
+resource "aws_security_group" "this" {
+  name = "${module.label.id}${var.delimiter}sg"
+  description = "Allow TLS inbound traffic"
+}
+
+resource "aws_security_group_rule" "ssh" {
+  security_group_id = aws_security_group.this.id
+  type = "ingress"
+  from_port = 22
+  to_port = 22
+  protocol = "tcp"
+  cidr_blocks = [
+    "202.124.175.194/32"
+  ]
+}
+
+resource "aws_security_group_rule" "http_app" {
+  security_group_id = aws_security_group.this.id
+  type = "ingress"
+  from_port = 9090
+  to_port = 9090
+  protocol = "tcp"
+  cidr_blocks = [
+    "0.0.0.0/0"
+  ]
+}
+
+resource "aws_security_group_rule" "allow_out_all" {
+  security_group_id = aws_security_group.this.id
+  type = "egress"
+  from_port = 0
+  to_port = 65535
+  protocol = "tcp"
+  cidr_blocks = [
+    "0.0.0.0/0"
+  ]
 }
 
 # IAM Role with policy AmazonEC2RoleforAWSCodeDeploy
@@ -54,48 +93,6 @@ resource "aws_iam_instance_profile" "this" {
   role = aws_iam_role.this.name
 }
 
-# Security Group
-resource "aws_security_group" "this" {
-  name = "${module.label.id}${var.delimiter}sg"
-  description = "Allow TLS inbound traffic"
-  vpc_id = "vpc-b919a3d0"
-
-  ingress {
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = [
-      "202.124.175.194/32"
-    ]
-  }
-
-  ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
-  }
-
-  ingress {
-    from_port = 9090
-    to_port = 9090
-    protocol = "tcp"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
-  }
-
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
-  }
-}
 
 # AMI for Amazon Linux 2
 data "aws_ami" "amazon_linux_2" {
