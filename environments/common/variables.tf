@@ -60,6 +60,12 @@ variable "vpc_instance_tenancy" {
   description = "A tenancy option for instances launched into the VPC"
 }
 
+variable "subnet_cidr_block" {
+  type = "string"
+  default = ""
+  description = "The CIDR block for the VPC"
+}
+
 variable "subnet_numbers" {
   description = "Map from availability zone to the number that should be used for each availability zone's subnet"
   default     = {
