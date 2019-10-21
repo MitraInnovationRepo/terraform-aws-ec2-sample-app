@@ -1,7 +1,18 @@
-provider "aws" {
-  profile = var.aws_profile
-  region = var.aws_region
-  version = "~> 2.25"
+locals {
+  namespace = "mitrai"
+  name = "sample"
+  stage = var.stage
+
+  tags = merge({
+    BusinessUnit = "DIGITAL"
+    Team = "SETF"
+  }, var.tags)
+
+  attributes = concat([
+    "sample"
+  ], var.attributes)
+
+  delimiter = "-"
 }
 
 locals {
@@ -15,45 +26,40 @@ locals {
   ]
 }
 
-module "label" {
-  source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git//modules/aws-label?ref=tags/v0.2.1-lw"
-  namespace = var.namespace
-  name = var.name
-  stage = var.stage
-  tags = var.tags
-  attributes = var.attributes
-  delimiter = var.delimiter
+module "ec2_vpc_setup" {
+  source = "../ec2_vpc_setup"
+
+  namespace = local.namespace
+  name = local.name
+  stage = local.stage
+  tags = local.tags
+  attributes = local.attributes
+  delimiter = local.delimiter
 }
 
 module "mitrai_setf_codepipeline" {
   source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git?ref=tags/v0.2.2-lw"
-  name = var.name
-  namespace = var.namespace
-  stage = var.stage
-  tags = var.tags
-  attributes = var.attributes
+
+  namespace = local.namespace
+  name = local.name
+  stage = local.stage
+  tags = local.tags
+  attributes = local.attributes
+  delimiter = local.delimiter
 
   github_organization = "MitraInnovationRepo"
   github_repository = "hello-spring-boot"
-  github_repository_branch = "dev"
-  github_token = "2355e4918e840f270d170357fdbb4f6e347e94ca"
-  github_webhook_events = [
-    "push"
-  ]
-
-  webhook_filters = [
-    {
-      json_path = "$.ref"
-      match_equals = "refs/heads/{Branch}"
-    }
-  ]
+  github_repository_branch = var.github_repository_branch
+  github_token = var.github_token
+  github_webhook_events = var.github_webhook_events
+  webhook_filters = var.webhook_filters
 
   codebuild_description = "SETF CodeBuild Sample Java Application"
   codebuild_buildspec = file("${path.module}/resources/buildspec.yml")
   codebuild_build_environment_compute_type = "BUILD_GENERAL1_SMALL"
   codebuild_build_environment_image = "aws/codebuild/standard:1.0"
   codebuild_build_timeout = "5"
-  codedeploy_deployment_config_name = "CodeDeployDefault.OneAtATime"
 
+  codedeploy_deployment_config_name = "CodeDeployDefault.OneAtATime"
   codedeploy_ec2_tag_filters = local.codepipeline_codedeploy_ec2_tag_filters
 }

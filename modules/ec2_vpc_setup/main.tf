@@ -1,9 +1,3 @@
-provider "aws" {
-  profile = var.aws_profile
-  region = var.aws_region
-  version = "~> 2.25"
-}
-
 module "label" {
   source = "git::https://github.com/MitraInnovationRepo/terraform-aws-codepipeline.git//modules/aws-label?ref=tags/v0.2.1-lw"
   namespace = var.namespace
