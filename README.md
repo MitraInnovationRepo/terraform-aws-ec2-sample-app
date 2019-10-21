@@ -3,28 +3,11 @@ Sample application in order to use the Terraform AWS pipeline
 
 ## 1. Steps
 
-### 1.1. Build Pipeline
+### 1.1. Setup github token in environments
 
-Create `terraform.tfvars` file in the directory `pipeline` and add following.
+Create `terraform.tfvars` file in the directories `environments/dev` and `environments/prod`. Add the github token value as follows.
 ```hcl-terraform
-aws_region = "us-east-2"
-aws_profile = "default"
-
-name = "sample"
-namespace = "mitrai"
-stage = "develop"
-tags = {
-  "BusinessUnit" = "DIGITAL"
-  "Team" = "SETF"
-}
-attributes = ["SETF"]
-```
-
-Execute following
-```bash
-cd pipeline
-terraform init
-terraform apply
+github_token = "*******************************************"
 ```
 
 ### 1.2. Spin Environments

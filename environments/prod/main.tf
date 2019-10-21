@@ -15,7 +15,7 @@ module "production_environment" {
     "SETF"
   ]
 
-  github_repository_branch = "dev"
+  github_repository_branch = "master"
   github_webhook_events = [
     "push"
   ]

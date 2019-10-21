@@ -35,6 +35,9 @@ module "ec2_vpc_setup" {
   tags = local.tags
   attributes = local.attributes
   delimiter = local.delimiter
+
+  vpc_cidr_block = var.vpc_cidr_block
+  subnet_cidr_block = var.subnet_cidr_block
 }
 
 module "mitrai_setf_codepipeline" {
@@ -55,7 +58,7 @@ module "mitrai_setf_codepipeline" {
   webhook_filters = var.webhook_filters
 
   codebuild_description = "SETF CodeBuild Sample Java Application"
-  codebuild_buildspec = file("${path.module}/resources/buildspec.yml")
+  codebuild_buildspec = file("../../resources/buildspec.yml")
   codebuild_build_environment_compute_type = "BUILD_GENERAL1_SMALL"
   codebuild_build_environment_image = "aws/codebuild/standard:1.0"
   codebuild_build_timeout = "5"
