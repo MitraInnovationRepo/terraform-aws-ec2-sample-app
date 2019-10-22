@@ -16,6 +16,6 @@ phases:
       - echo Build completed on `date`
 artifacts:
   files:
-    - target/sample-spring-app-1.0-SNAPSHOT.jar
+    - target/hello-spring-boot-1.0-SNAPSHOT.jar
     - appspec.yml
     - scripts/*

@@ -17,12 +17,12 @@ module "production_environment" {
 
   github_repository_branch = "master"
   github_webhook_events = [
-    "push"
+    "release"
   ]
   webhook_filters = [
     {
-      json_path = "$.ref"
-      match_equals = "refs/heads/{Branch}"
+      json_path = "$.action"
+      match_equals= "published"
     }
   ]
   github_token = var.github_token
