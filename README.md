@@ -7,7 +7,7 @@ Sample application that uses the terraform module: [terraform-aws-codepipeline](
 ### 1.1. Setup GitHub token in environments
 
 1. Visit https://github.com/settings/tokens and create a GitHub token.
-1. Add the GitHub token with creating files `environments/dev/terraform.tfvars` and `environments/prod/terraform.tfvars`
+1. Add the GitHub token with creating files `environments/dev/terraform.tfvars` and `environments/prod/terraform.tfvars` OR find the files in each directory `terraform.tfvars.template`, replace the token value and rename the file as `terraform.tfvars`.
 
 ```hcl-terraform
 github_token = "*******************************************"
